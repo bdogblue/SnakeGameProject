@@ -1,5 +1,5 @@
 from pickle import TRUE
-import pygame, sys
+import pygame, sys, random
 
 from pygame.locals import *
 
@@ -13,6 +13,7 @@ BLACK = (0, 0, 0)
 
 FPS = 2
 DIR = 1
+TAIL = 0
 
 BORDER = pygame.Rect(WIDTH, 0, 10, HEIGHT)
 
@@ -47,7 +48,26 @@ def move_snake(snake, direction):
     if direction == 3:
         snake.x -= 20
 
+def move_meal(meal, snake):
+    
+    if snake.x-(snake.width*3) <= meal.width: 
+        meal.x = random.randrange(snake.x+(snake.width*4), WIDTH-meal.width, 20)
+    elif snake.x+(snake.width*4) >= WIDTH-meal.width:
+        meal.x = random.randrange(0, snake.x-(snake.width*3), 20)
+    else:
+        meal.x = random.choice([random.randrange(0, snake.x-(snake.width*3), 20), random.randrange(snake.x+(snake.width*4), WIDTH-meal.width, 20)])
+
+    if snake.y-(snake.height*3) <= meal.height: 
+        meal.y = random.randrange(snake.y+(snake.height*4), HEIGHT-meal.height, 20)
+    elif snake.y+(snake.height*4) >= HEIGHT-meal.height:
+        meal.y = random.randrange(0, snake.y-(snake.height*3), 20)
+    else:
+        meal.y = random.choice([random.randrange(0, snake.y-(snake.height*3), 20), random.randrange(snake.y+(snake.height*4), HEIGHT-meal.height, 20)])
+
+    
 def main():
+
+    global TAIL
 
     clock = pygame.time.Clock()
 
@@ -60,11 +80,14 @@ def main():
 
         keys_pressed = pygame.key.get_pressed()
 
-        
         snake_handle_movement(keys_pressed, snake)
 
+        if snake.colliderect(meal):
+            move_meal(meal, snake)
+            TAIL += 1
+
         # Check if going off screen
-        if snake.x < 0 or snake.x > WIDTH-20 or snake.y < 0 or snake.y > HEIGHT-20:
+        if snake.x < 0 or snake.x > WIDTH-snake.width or snake.y < 0 or snake.y > HEIGHT-snake.height:
             break
 
         draw_window()
