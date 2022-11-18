@@ -51,12 +51,9 @@ def snake_handle_movement(keys_pressed, snake, tail_parts):
     if keys_pressed[pygame.K_DOWN]:  # DOWN
         DIR = 2
     
-    current_x = snake.x
-    current_y = snake.y
-
+    tail_parts = move_tail(tail_parts, snake)
+    
     move_snake(snake, DIR)
-
-    tail_parts = move_tail(tail_parts, current_x, current_y)
 
 def move_snake(snake, direction):
     if direction == 0:
@@ -69,7 +66,6 @@ def move_snake(snake, direction):
         snake.x -= snake.width
 
 def move_meal(meal, snake):
-    
     if snake.x-(snake.width*3) <= meal.width: 
         meal.x = random.randrange(snake.x+(snake.width*4), WIDTH-meal.width, BLOCKSIZE)
     elif snake.x+(snake.width*4) >= WIDTH-meal.width:
@@ -87,6 +83,8 @@ def move_meal(meal, snake):
 def add_tail(tail_parts, snake):
     global TAIL, DIR
 
+    pos = TAIL - 1
+
     if TAIL <= 0:
         if DIR == 0:
             newpart = Rect(snake.x, snake.y + snake.height, BLOCKSIZE, BLOCKSIZE)
@@ -96,27 +94,62 @@ def add_tail(tail_parts, snake):
             newpart = Rect(snake.x, snake.y - snake.height, BLOCKSIZE, BLOCKSIZE)
         if DIR == 3:
             newpart = Rect(snake.x + snake.width, snake.y, BLOCKSIZE, BLOCKSIZE)
-        tail_parts.append(newpart)
+    elif TAIL == 1:
+        if DIR == 0:
+            newpart = Rect(snake.x, snake.y + snake.height*2, BLOCKSIZE, BLOCKSIZE)
+        if DIR == 1:
+            newpart = Rect(snake.x - snake.width*2, snake.y, BLOCKSIZE, BLOCKSIZE)
+        if DIR == 2:
+            newpart = Rect(snake.x, snake.y - snake.height*2, BLOCKSIZE, BLOCKSIZE)
+        if DIR == 3:
+            newpart = Rect(snake.x + snake.width*2, snake.y, BLOCKSIZE, BLOCKSIZE)
+    else:
+        if get_tail_dir(tail_parts) == 0:
+            newpart = Rect(tail_parts[pos].x, tail_parts[pos].y + tail_parts[pos].height, BLOCKSIZE, BLOCKSIZE)
+        if get_tail_dir(tail_parts) == 1:
+            newpart = Rect(tail_parts[pos].x - tail_parts[pos].width, tail_parts[pos].y, BLOCKSIZE, BLOCKSIZE)
+        if get_tail_dir(tail_parts) == 2:
+            newpart = Rect(tail_parts[pos].x, tail_parts[pos].y - tail_parts[pos].height, BLOCKSIZE, BLOCKSIZE)
+        if get_tail_dir(tail_parts) == 3:
+            newpart = Rect(tail_parts[pos].x + tail_parts[pos].width, tail_parts[pos].y, BLOCKSIZE, BLOCKSIZE)
+    
+    tail_parts.append(newpart)
 
-def move_tail(tail_parts, pre_snake_x, pre_snake_y):
+def move_tail(tail_parts, snake):
     global TAIL
+    
+    count = TAIL
 
     new_parts = tail_parts
-    
-    for part in new_parts:
-        count =+ 1
 
     if TAIL > 0:
-        new_parts[0].x = pre_snake_x
-        new_parts[0].y = pre_snake_y
 
-    for tail in tail_parts:
-        if TAIL != 0 and TAIL+1 < len(new_parts):
-            new_parts[tail+1].x = tail_parts[tail_parts].x
-            new_parts[tail+1].y = tail_parts[tail_parts].y
-    
+        if TAIL > 1:
+            
+            while 0 < count:
+                count -= 1
+                new_parts[count].x = tail_parts[count-1].x
+                new_parts[count].y = tail_parts[count-1].y
+
+        new_parts[0].x = snake.x
+        new_parts[0].y = snake.y
+
     return new_parts
-    
+ 
+def get_tail_dir(tail_parts):
+    global TAIL
+
+    pos = TAIL - 1
+
+    if tail_parts[pos].x == tail_parts[pos-1].x and tail_parts[pos].y == (tail_parts[pos-1].y + tail_parts[pos].height):
+        return 0
+    if tail_parts[pos].x == (tail_parts[pos-1].x - tail_parts[pos].width) and tail_parts[pos].y == tail_parts[pos-1].y:
+        return 1
+    if tail_parts[pos].x == tail_parts[pos-1].x and tail_parts[pos].y == (tail_parts[pos-1].y - tail_parts[pos].height):
+        return 2
+    if tail_parts[pos].x == (tail_parts[pos-1].x + tail_parts[pos].width) and tail_parts[pos].y == tail_parts[pos-1].y:
+        return 3
+
 def main():
 
     global TAIL
