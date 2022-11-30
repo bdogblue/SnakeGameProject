@@ -3,13 +3,16 @@ import pygame, sys, random
 
 from pygame.locals import *
 
-WIDTH, HEIGHT = 800, 600
-WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.font.init()
+
+WIDTH, HEIGHT = 600, 400
+WIN = pygame.display.set_mode((WIDTH+120, HEIGHT+120))
 pygame.display.set_caption('Snake')
 
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
+GREEN = (21, 89, 12)
 
 FPS = 2
 DIR = 1
@@ -17,21 +20,24 @@ DIR = 1
 BLOCKSIZE = 20
 TAIL = 0
 
-BORDER = pygame.Rect(WIDTH, 0, 10, HEIGHT)
+BORDER = pygame.Rect(60, 60, WIDTH, HEIGHT)
 
 snake = pygame.Rect(260, 200, BLOCKSIZE, BLOCKSIZE)
 meal = pygame.Rect(80, 80, BLOCKSIZE, BLOCKSIZE)
- 
-# add a new section when snake head eats a meal
-# 
-# if snake head runs into tale then game over
 
-# also a new meal needs to not spawn in the tale
+# + if snake head runs into tale then game over
 
-# need a new game over screen
+# + snake should not be able to move in the direction of its tail
+
+# + also a new meal needs to not spawn in the tale
+
+# add a score indicator
+
+# need a new game over screen with option to start again
 
 def draw_window(tail_parts):
-    WIN.fill(BLACK)
+    WIN.fill(GREEN)
+    pygame.draw.rect(WIN, BLACK, BORDER)
     pygame.draw.rect(WIN, RED, snake)
     pygame.draw.rect(WIN, BLUE, meal)
 
@@ -42,14 +48,24 @@ def draw_window(tail_parts):
 
 def snake_handle_movement(keys_pressed, snake, tail_parts):
     global DIR
-    if keys_pressed[pygame.K_LEFT]:  # LEFT
-        DIR = 3
-    if keys_pressed[pygame.K_RIGHT]:  # RIGHT
-        DIR = 1
-    if keys_pressed[pygame.K_UP]:  # UP
-        DIR = 0
-    if keys_pressed[pygame.K_DOWN]:  # DOWN
-        DIR = 2
+    if TAIL <= 0:
+        if keys_pressed[pygame.K_LEFT]:  # LEFT
+            DIR = 3
+        if keys_pressed[pygame.K_RIGHT]:  # RIGHT
+            DIR = 1
+        if keys_pressed[pygame.K_UP]:  # UP
+            DIR = 0
+        if keys_pressed[pygame.K_DOWN]:  # DOWN
+            DIR = 2
+    else:
+        if keys_pressed[pygame.K_LEFT] and DIR != 1:  # LEFT
+            DIR = 3
+        if keys_pressed[pygame.K_RIGHT] and DIR != 3:  # RIGHT
+            DIR = 1
+        if keys_pressed[pygame.K_UP] and DIR != 2:  # UP
+            DIR = 0
+        if keys_pressed[pygame.K_DOWN] and DIR != 0:  # DOWN
+            DIR = 2
     
     tail_parts = move_tail(tail_parts, snake)
     
@@ -66,19 +82,22 @@ def move_snake(snake, direction):
         snake.x -= snake.width
 
 def move_meal(meal, snake):
-    if snake.x-(snake.width*3) <= meal.width: 
-        meal.x = random.randrange(snake.x+(snake.width*4), WIDTH-meal.width, BLOCKSIZE)
-    elif snake.x+(snake.width*4) >= WIDTH-meal.width:
-        meal.x = random.randrange(0, snake.x-(snake.width*3), BLOCKSIZE)
-    else:
-        meal.x = random.choice([random.randrange(0, snake.x-(snake.width*3), BLOCKSIZE), random.randrange(snake.x+(snake.width*4), WIDTH-meal.width, BLOCKSIZE)])
+    find = True
 
-    if snake.y-(snake.height*3) <= meal.height: 
-        meal.y = random.randrange(snake.y+(snake.height*4), HEIGHT-meal.height, BLOCKSIZE)
-    elif snake.y+(snake.height*4) >= HEIGHT-meal.height:
-        meal.y = random.randrange(0, snake.y-(snake.height*3), BLOCKSIZE)
-    else:
-        meal.y = random.choice([random.randrange(0, snake.y-(snake.height*3), BLOCKSIZE), random.randrange(snake.y+(snake.height*4), HEIGHT-meal.height, BLOCKSIZE)])
+    while find:
+        x = random.randrange(60, (WIDTH+60)-meal.width, BLOCKSIZE)
+        y = random.randrange(60, (HEIGHT+60)-meal.height, BLOCKSIZE)
+
+        if ((x != meal.x and y != meal.y) and 
+            (x != snake.x and y != snake.y) and 
+            (x != snake.x and y != (snake.y - BLOCKSIZE)) and 
+            (x != (snake.x + BLOCKSIZE) and y != snake.y) and 
+            (x != snake.x and y != (snake.y + BLOCKSIZE)) and 
+            (x != (snake.x - BLOCKSIZE) and y != snake.y)):
+            
+            meal.x = x
+            meal.y = y
+            find = False
 
 def add_tail(tail_parts, snake):
     global TAIL, DIR
@@ -174,8 +193,12 @@ def main():
             move_meal(meal, snake)
             TAIL += 1
 
+        for tail in tail_parts:
+            if snake.x == tail.x and snake.y == tail.y:
+                run = False
+
         # Check if going off screen
-        if snake.x < 0 or snake.x > WIDTH-snake.width or snake.y < 0 or snake.y > HEIGHT-snake.height:
+        if snake.x < 60 or snake.x > (WIDTH+60)-snake.width or snake.y < 60 or snake.y > (HEIGHT+60)-snake.height:
             break
 
         draw_window(tail_parts)
