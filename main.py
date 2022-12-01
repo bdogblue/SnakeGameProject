@@ -14,6 +14,8 @@ BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 GREEN = (21, 89, 12)
 
+SCORE_FONT = pygame.font.SysFont('comicsans', 40)
+
 FPS = 2
 DIR = 1
 
@@ -25,13 +27,7 @@ BORDER = pygame.Rect(60, 60, WIDTH, HEIGHT)
 snake = pygame.Rect(260, 200, BLOCKSIZE, BLOCKSIZE)
 meal = pygame.Rect(80, 80, BLOCKSIZE, BLOCKSIZE)
 
-# + if snake head runs into tale then game over
-
-# + snake should not be able to move in the direction of its tail
-
-# + also a new meal needs to not spawn in the tale
-
-# add a score indicator
+# + add a score indicator
 
 # need a new game over screen with option to start again
 
@@ -40,6 +36,9 @@ def draw_window(tail_parts):
     pygame.draw.rect(WIN, BLACK, BORDER)
     pygame.draw.rect(WIN, RED, snake)
     pygame.draw.rect(WIN, BLUE, meal)
+
+    score_text = SCORE_FONT.render("Score: " + str(TAIL), 1, BLACK)
+    WIN.blit(score_text, (60, 30))
 
     for tail in tail_parts:
         pygame.draw.rect(WIN, RED, tail)
@@ -81,14 +80,15 @@ def move_snake(snake, direction):
     if direction == 3:
         snake.x -= snake.width
 
-def move_meal(meal, snake):
+def move_meal(meal, snake, tail_parts):
     find = True
 
     while find:
         x = random.randrange(60, (WIDTH+60)-meal.width, BLOCKSIZE)
         y = random.randrange(60, (HEIGHT+60)-meal.height, BLOCKSIZE)
-
-        if ((x != meal.x and y != meal.y) and 
+        
+        if ((x != meal.x and y != meal.y) and
+            (is_over_tail(tail_parts, meal.x, meal.y) == False) and
             (x != snake.x and y != snake.y) and 
             (x != snake.x and y != (snake.y - BLOCKSIZE)) and 
             (x != (snake.x + BLOCKSIZE) and y != snake.y) and 
@@ -98,6 +98,14 @@ def move_meal(meal, snake):
             meal.x = x
             meal.y = y
             find = False
+
+def is_over_tail(tail_parts, x, y):
+    found = False
+    for tail in tail_parts:
+        if tail.x == x and tail.y == y:
+            found = True
+    return found
+    
 
 def add_tail(tail_parts, snake):
     global TAIL, DIR
@@ -190,7 +198,7 @@ def main():
 
         if snake.colliderect(meal):
             add_tail(tail_parts, snake)
-            move_meal(meal, snake)
+            move_meal(meal, snake, tail_parts)
             TAIL += 1
 
         for tail in tail_parts:
