@@ -15,23 +15,17 @@ BLACK = (0, 0, 0)
 GREEN = (21, 89, 12)
 
 SCORE_FONT = pygame.font.SysFont('comicsans', 40)
+BORDER = pygame.Rect(60, 60, WIDTH, HEIGHT)
 
 FPS = 2
-DIR = 1
-
 BLOCKSIZE = 20
-TAIL = 0
-
-BORDER = pygame.Rect(60, 60, WIDTH, HEIGHT)
 
 snake = pygame.Rect(260, 200, BLOCKSIZE, BLOCKSIZE)
 meal = pygame.Rect(80, 80, BLOCKSIZE, BLOCKSIZE)
 
-# + add a score indicator
-
 # need a new game over screen with option to start again
 
-def draw_window(tail_parts):
+def draw_window(tail_parts, TAIL):
     WIN.fill(GREEN)
     pygame.draw.rect(WIN, BLACK, BORDER)
     pygame.draw.rect(WIN, RED, snake)
@@ -45,28 +39,30 @@ def draw_window(tail_parts):
 
     pygame.display.update()
 
-def snake_handle_movement(keys_pressed, snake, tail_parts):
-    global DIR
+def snake_handle_direction(keys_pressed, snake, tail_parts, TAIL, DIR):
     if TAIL <= 0:
         if keys_pressed[pygame.K_LEFT]:  # LEFT
-            DIR = 3
+            return 3
         if keys_pressed[pygame.K_RIGHT]:  # RIGHT
-            DIR = 1
+            return 1
         if keys_pressed[pygame.K_UP]:  # UP
-            DIR = 0
+            return 0
         if keys_pressed[pygame.K_DOWN]:  # DOWN
-            DIR = 2
+            return 2
+        return DIR
     else:
         if keys_pressed[pygame.K_LEFT] and DIR != 1:  # LEFT
-            DIR = 3
+            return 3
         if keys_pressed[pygame.K_RIGHT] and DIR != 3:  # RIGHT
-            DIR = 1
+            return 1
         if keys_pressed[pygame.K_UP] and DIR != 2:  # UP
-            DIR = 0
+            return 0
         if keys_pressed[pygame.K_DOWN] and DIR != 0:  # DOWN
-            DIR = 2
-    
-    tail_parts = move_tail(tail_parts, snake)
+            return 2
+        return DIR
+
+def snake_handle_movement(snake, tail_parts, TAIL, DIR):
+    tail_parts = move_tail(tail_parts, snake, TAIL)
     
     move_snake(snake, DIR)
 
@@ -105,11 +101,8 @@ def is_over_tail(tail_parts, x, y):
         if tail.x == x and tail.y == y:
             found = True
     return found
-    
 
-def add_tail(tail_parts, snake):
-    global TAIL, DIR
-
+def add_tail(tail_parts, snake, TAIL, DIR):
     pos = TAIL - 1
 
     if TAIL <= 0:
@@ -131,20 +124,18 @@ def add_tail(tail_parts, snake):
         if DIR == 3:
             newpart = Rect(snake.x + snake.width*2, snake.y, BLOCKSIZE, BLOCKSIZE)
     else:
-        if get_tail_dir(tail_parts) == 0:
+        if get_tail_dir(tail_parts, TAIL) == 0:
             newpart = Rect(tail_parts[pos].x, tail_parts[pos].y + tail_parts[pos].height, BLOCKSIZE, BLOCKSIZE)
-        if get_tail_dir(tail_parts) == 1:
+        if get_tail_dir(tail_parts, TAIL) == 1:
             newpart = Rect(tail_parts[pos].x - tail_parts[pos].width, tail_parts[pos].y, BLOCKSIZE, BLOCKSIZE)
-        if get_tail_dir(tail_parts) == 2:
+        if get_tail_dir(tail_parts, TAIL) == 2:
             newpart = Rect(tail_parts[pos].x, tail_parts[pos].y - tail_parts[pos].height, BLOCKSIZE, BLOCKSIZE)
-        if get_tail_dir(tail_parts) == 3:
+        if get_tail_dir(tail_parts, TAIL) == 3:
             newpart = Rect(tail_parts[pos].x + tail_parts[pos].width, tail_parts[pos].y, BLOCKSIZE, BLOCKSIZE)
     
     tail_parts.append(newpart)
 
-def move_tail(tail_parts, snake):
-    global TAIL
-    
+def move_tail(tail_parts, snake, TAIL):
     count = TAIL
 
     new_parts = tail_parts
@@ -163,9 +154,7 @@ def move_tail(tail_parts, snake):
 
     return new_parts
  
-def get_tail_dir(tail_parts):
-    global TAIL
-
+def get_tail_dir(tail_parts, TAIL):
     pos = TAIL - 1
 
     if tail_parts[pos].x == tail_parts[pos-1].x and tail_parts[pos].y == (tail_parts[pos-1].y + tail_parts[pos].height):
@@ -179,7 +168,8 @@ def get_tail_dir(tail_parts):
 
 def main():
 
-    global TAIL
+    Direction = 1
+    Tail = 0
 
     clock = pygame.time.Clock()
 
@@ -194,12 +184,14 @@ def main():
 
         keys_pressed = pygame.key.get_pressed()
 
-        snake_handle_movement(keys_pressed, snake, tail_parts)
-
+        Direction = snake_handle_direction(keys_pressed, snake, tail_parts, Tail, Direction)
+        
+        snake_handle_movement(snake, tail_parts, Tail, Direction)
+        
         if snake.colliderect(meal):
-            add_tail(tail_parts, snake)
+            add_tail(tail_parts, snake, Tail, Direction)
             move_meal(meal, snake, tail_parts)
-            TAIL += 1
+            Tail += 1
 
         for tail in tail_parts:
             if snake.x == tail.x and snake.y == tail.y:
@@ -209,7 +201,7 @@ def main():
         if snake.x < 60 or snake.x > (WIDTH+60)-snake.width or snake.y < 60 or snake.y > (HEIGHT+60)-snake.height:
             break
 
-        draw_window(tail_parts)
+        draw_window(tail_parts, Tail)
 
     pygame.quit()
     sys.exit()
