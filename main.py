@@ -15,15 +15,16 @@ BLACK = (0, 0, 0)
 GREEN = (21, 89, 12)
 
 SCORE_FONT = pygame.font.SysFont('comicsans', 40)
+GAMEOVER_FONT = pygame.font.SysFont('comicsans', 80)
+RETRY_FONT = pygame.font.SysFont('comicsans', 20)
 BORDER = pygame.Rect(60, 60, WIDTH, HEIGHT)
+GAMEOVER_BACK = pygame.Rect((WIDTH+120)/2 - 200, (HEIGHT+120)/2 - 100, 400, 200)
 
 FPS = 2
 BLOCKSIZE = 20
 
 snake = pygame.Rect(260, 200, BLOCKSIZE, BLOCKSIZE)
 meal = pygame.Rect(80, 80, BLOCKSIZE, BLOCKSIZE)
-
-# need a new game over screen with option to start again
 
 def draw_window(tail_parts, TAIL):
     WIN.fill(GREEN)
@@ -36,6 +37,17 @@ def draw_window(tail_parts, TAIL):
 
     for tail in tail_parts:
         pygame.draw.rect(WIN, RED, tail)
+    
+    pygame.display.update()
+
+def draw_gameover():
+    pygame.draw.rect(WIN, BLACK, GAMEOVER_BACK)
+
+    draw_text = GAMEOVER_FONT.render("Game Over", 1, RED)
+    WIN.blit(draw_text, ((WIDTH+120)/2 - draw_text.get_width()/2, (HEIGHT+120)/2 - draw_text.get_height()/2))
+
+    retry_text = RETRY_FONT.render("Play again? (y/n)", 1, RED)
+    WIN.blit(retry_text, ((WIDTH+120)/2 - draw_text.get_width()/2, (HEIGHT+120)/2 - (draw_text.get_height()/2)+60))
 
     pygame.display.update()
 
@@ -136,18 +148,13 @@ def add_tail(tail_parts, snake, TAIL, DIR):
     tail_parts.append(newpart)
 
 def move_tail(tail_parts, snake, TAIL):
-    count = TAIL
-
     new_parts = tail_parts
 
-    if TAIL > 0:
-
-        if TAIL > 1:
-            
-            while 0 < count:
-                count -= 1
-                new_parts[count].x = tail_parts[count-1].x
-                new_parts[count].y = tail_parts[count-1].y
+    if TAIL > 0:    
+        while 0 < TAIL:
+            TAIL -= 1
+            new_parts[TAIL].x = tail_parts[TAIL-1].x
+            new_parts[TAIL].y = tail_parts[TAIL-1].y
 
         new_parts[0].x = snake.x
         new_parts[0].y = snake.y
@@ -170,6 +177,8 @@ def main():
 
     Direction = 1
     Tail = 0
+
+    gameover = False
 
     clock = pygame.time.Clock()
 
@@ -195,11 +204,35 @@ def main():
 
         for tail in tail_parts:
             if snake.x == tail.x and snake.y == tail.y:
-                run = False
+                gameover = True
 
         # Check if going off screen
         if snake.x < 60 or snake.x > (WIDTH+60)-snake.width or snake.y < 60 or snake.y > (HEIGHT+60)-snake.height:
-            break
+            gameover = True
+
+        if gameover == True:
+            draw_gameover()
+            
+            pygame.event.clear()
+            while True:
+                event = pygame.event.wait()
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == KEYDOWN:
+                    if event.key == K_y:
+                        Direction = 1
+                        Tail = 0
+                        gameover = False
+                        tail_parts = []
+                        snake.x = 260
+                        snake.y = 200
+                        meal.x = 80
+                        meal.y = 80
+                        break
+                    else:
+                        pygame.quit()
+                        sys.exit()
 
         draw_window(tail_parts, Tail)
 
